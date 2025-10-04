@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reaction Time Game</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      background-color: #222;
+      color: white;
+    }
+
+    #gameBox {
+      width: 80%;
+      height: 300px;
+      margin: 30px auto;
+      background-color: #555;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    #startBtn, #downloadBtn {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #score {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🧠 Reaction Time Game</h1>
+  <p>Click when the box turns <strong>green</strong>. Don't click too early!</p>
+
+  <button id="startBtn">Start Game</button>
+  <div id="gameBox">Click "Start Game" to begin</div>
+
+  <p id="feedback"></p>
+  <div id="score">Score: 0 | Trials: 0</div>
+
+  <button id="downloadBtn" class="hidden">Download Results</button>
+
+  <script>
+    const startBtn = document.getElementById("startBtn");
+    const gameBox = document.getElementById("gameBox");
+    const feedback = document.getElementById("feedback");
+    const scoreDisplay = document.getElementById("score");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    let waiting = false;
+    let startTime = 0;
+    let reactionTimes = [];
+    let trials = 0;
+    let score = 0;
+    let timeoutID;
+
+    startBtn.onclick = () => {
+      feedback.textContent = "";
+      startTrial();
+    };
+
+    function startTrial() {
+      gameBox.style.backgroundColor = "#555";
+      gameBox.textContent = "Wait for green...";
+      waiting = true;
+
+      const delay = Math.floor(Math.random() * 2000) + 1000; // 1–3 seconds
+      timeoutID = setTimeout(() => {
+        gameBox.style.backgroundColor = "green";
+        gameBox.textContent = "CLICK!";
+        startTime = new Date().getTime();
+        waiting = false;
+      }, delay);
+    }
+
+    gameBox.onclick = () => {
+      const currentTime = new Date().getTime();
+
+      if (waiting) {
+        clearTimeout(timeoutID);
+        feedback.textContent = "⛔ Too soon! Wait for green!";
+        gameBox.style.backgroundColor = "red";
+        gameBox.textContent = "Too Soon!";
+        trials++;
+      } else if (startTime > 0) {
+        const reactionTime = currentTime - startTime;
+        reactionTimes.push(reactionTime);
+        feedback.textContent = `✅ Reaction Time: ${reactionTime} ms`;
+        gameBox.style.backgroundColor = "#555";
+        gameBox.textContent = "Click to start next round";
+        score++;
+        trials++;
+      }
+
+      scoreDisplay.textContent = `Score: ${score} | Trials: ${trials}`;
+
+      // After 5 trials, show download button
+      if (trials >= 5) {
+        downloadBtn.classList.remove("hidden");
+        gameBox.onclick = null;
+        feedback.textContent += " 🎉 Game over!";
+        gameBox.textContent = "Game Finished";
+      }
+    };
+
+    downloadBtn.onclick = () => {
+      let csv = "Trial,Reaction Time (ms)\n";
+      reactionTimes.forEach((rt, index) => {
+        csv += `${index + 1},${rt}\n`;
+      });
+
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "reaction_times.csv";
+      a.click();
+    };
+  </script>
+
+</body>
+</html>
